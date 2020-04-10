@@ -15,5 +15,4 @@ Démarrez le projet
 docker-compose up
 ```
 
-Vous pouvez normalement vous connecter sur
-https://traefik.$DOMAIN_NAME
+Traefik est accessible sur l'url https://traefik.$DOMAIN_NAME:9443
