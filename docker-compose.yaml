@@ -1,0 +1,43 @@
+version: "3.7"
+
+services:
+  traefik:
+    image: "traefik:v2.2"
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.http.address=:80"
+      - "--entrypoints.https.address=:443"
+      - "--entrypoints.https-admin.address=:9443"
+
+      - "--api.dashboard=true"
+
+      - "--log.filePath=/var/log/traefik.log"
+      - "--log.level=DEBUG"
+
+      - "--accesslog=true"
+      - "--accesslog.filepath=/var/log/access.log"
+      - "--accesslog.bufferingsize=100"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "9443:9443"
+    volumes:
+      - ./htpassword:/etc/traefik/htpasswd/traefik:ro
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - ./logs/:/var/log/
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+
+      - "traefik.http.routers.api.rule=Host(`traefik.${DOMAIN_NAME:-recette.tech}`)"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.routers.api.entrypoints=https-admin"
+      - "traefik.docker.network=${COMPOSE_PROJECT_NAME}_traefik"
+
+      - "traefik.http.routers.api.middlewares=auth-traefik"
+      - "traefik.http.middlewares.auth-traefik.basicauth.usersfile=/etc/traefik/htpasswd/traefik"
+
+networks:
+  traefik:
