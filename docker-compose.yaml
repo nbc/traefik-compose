@@ -3,12 +3,18 @@ version: "3.7"
 services:
   traefik:
     image: "traefik:v2.2"
+    restart: always
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.http.address=:80"
       - "--entrypoints.https.address=:443"
       - "--entrypoints.https-admin.address=:9443"
+
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=http"
+      - "--certificatesresolvers.myresolver.acme.email=nicolas@barna.be"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
 
       - "--api.dashboard=true"
 
@@ -26,6 +32,7 @@ services:
       - ./htpassword:/etc/traefik/htpasswd/traefik:ro
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - ./logs/:/var/log/
+      - "./letsencrypt:/letsencrypt"
     networks:
       - traefik
     labels:
@@ -34,10 +41,12 @@ services:
       - "traefik.http.routers.api.rule=Host(`traefik.${DOMAIN_NAME:-recette.tech}`)"
       - "traefik.http.routers.api.service=api@internal"
       - "traefik.http.routers.api.entrypoints=https-admin"
-      - "traefik.docker.network=${COMPOSE_PROJECT_NAME}_traefik"
-
+      - "traefik.http.routers.api.tls.certresolver=myresolver"
       - "traefik.http.routers.api.middlewares=auth-traefik"
+
       - "traefik.http.middlewares.auth-traefik.basicauth.usersfile=/etc/traefik/htpasswd/traefik"
+
+      - "traefik.docker.network=${COMPOSE_PROJECT_NAME}_traefik"
 
 networks:
   traefik:
