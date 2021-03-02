@@ -44,7 +44,12 @@ services:
       - ./certs:/certs
       - "./letsencrypt:/letsencrypt"
     networks:
-      - traefik
+      traefik:
+        aliases:
+          - "udata.datahub"
+          - "queueui.datahub"
+          - "datahub-ecole.recette.tech"
+
     labels:
       - "traefik.enable=true"
       #- "traefik.constraint-label=spip"
