@@ -3,13 +3,18 @@ version: "3.7"
 services:
   traefik:
     image: "traefik:v2.2"
-    restart: always
+    restart: unless-stopped
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.http.address=:80"
       - "--entrypoints.https.address=:443"
+      - "--entrypoints.http-internal.address=:8080"
       - "--entrypoints.https-admin.address=:9443"
+
+      - "--global.checkNewVersion=false"
+      - "--global.sendAnonymousUsage=false"
+
 
       - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
       - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=http"
@@ -24,20 +29,25 @@ services:
       - "--accesslog=true"
       - "--accesslog.filepath=/var/log/access.log"
       - "--accesslog.bufferingsize=100"
+
+      #- "--providers.docker.constraints=Label(`traefik.constraint-label`,`spip`)"
+
     ports:
       - "80:80"
       - "443:443"
+      - "127.0.0.1:8080:8080"
       - "9443:9443"
     volumes:
       - ./htpassword:/etc/traefik/htpasswd/traefik:ro
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - ./logs/:/var/log/
+      - ./certs:/certs
       - "./letsencrypt:/letsencrypt"
     networks:
       - traefik
     labels:
       - "traefik.enable=true"
-
+      #- "traefik.constraint-label=spip"
       - "traefik.http.routers.api.rule=Host(`traefik.${DOMAIN_NAME:-recette.tech}`)"
       - "traefik.http.routers.api.service=api@internal"
       - "traefik.http.routers.api.entrypoints=https-admin"
